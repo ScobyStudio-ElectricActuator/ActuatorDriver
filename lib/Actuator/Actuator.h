@@ -1,3 +1,18 @@
+////////////////////////////////////
+//    Project: Actuator Driver    //
+//      Author: Scoby Studio      //
+//         Revision: v1.0         //
+////////////////////////////////////
+/*
+Revision history
+
+v1.0
+-Initial release
+-One channel
+-Serial controlled
+
+*/
+
 #ifndef Actuator_h
 #define Actuator_h
 
@@ -5,7 +20,8 @@
 
 class Actuator{
     public:
-        Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
+        Actuator();
+        void attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
         void cyclic();
         
     private:
@@ -29,8 +45,7 @@ class Actuator{
             serialExtend,
             serialRetract,
             serialStop,
-            serialRelax,
-            serialNoAction
+            serialRelax
         };
 
         int _extPin;
@@ -46,13 +61,12 @@ class Actuator{
         state _state;
         motorCmd _command;
 
-        state getState();
         void setState(state actuatorState);
+        state getState();
         
         int getSpeed();
         void setSpeed(int speed);
 
-        motorCmd getCommand();
         void setCommand(motorCmd motorCommand);
 
         serialCmd decodeSerial();
