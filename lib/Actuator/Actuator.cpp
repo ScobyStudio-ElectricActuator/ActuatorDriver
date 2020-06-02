@@ -5,9 +5,12 @@ Actuator::Actuator(){
     _minSpeed = 10;
 
     setSpeed(100);
-    setState(relaxed);
-}
+    _state = relaxed;
+    _prevState = relaxed;
 
+    _extendTimeout = 3000;
+    _retractTimeout = 3000;
+}
 
 void Actuator::attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin){
     Serial.begin(9600);
@@ -26,6 +29,7 @@ void Actuator::attachPins(int extPin, int retPin, int enablePin, int output1Pin,
     pinMode(_output1Pin, OUTPUT);
     pinMode(_output2Pin, OUTPUT);
 
+    checkFB();
     setCommand(motorRelax);
 }
 
@@ -42,12 +46,41 @@ int Actuator::getSpeed(){
     return map(_speed, _minSpeed, 255, 1, 100);
 }
 
-void Actuator::setState(state actuatorState){
-    _state = actuatorState;
-}
-
 Actuator::state Actuator::getState(){
     return _state;
+}
+
+void Actuator::setRetractTimeout(float retractTimeout){
+    _retractTimeout = retractTimeout*1000;
+}
+
+void Actuator::setExtendTimeout(float extendTimeout){
+    _extendTimeout = extendTimeout*1000;
+}
+
+void Actuator::extend(){
+    if(!_extFB){
+        _state = extending;
+    }
+}
+
+void Actuator::retract(){
+    if(!_retFB){
+        _state = retracting;
+    }
+}
+
+void Actuator::stop(){
+    _state = stopped;
+}
+
+void Actuator::relax(){
+    _state = relaxed;
+}
+
+void Actuator::checkFB(){
+    _extFB = !digitalRead(_extPin);
+    _retFB = !digitalRead(_retPin);
 }
 
 void Actuator::setCommand(motorCmd motorCommand){
@@ -75,137 +108,82 @@ void Actuator::setCommand(motorCmd motorCommand){
     }
 }
 
-Actuator::serialCmd Actuator::decodeSerial(){
-    static serialCmd serialResult = serialRelax;
-    if(Serial.available()){
-        String serialMsg = Serial.readString();
-        if(serialMsg.substring(0,9) == "set speed"){
-            setSpeed(serialMsg.substring(10).toInt());
-        }
-        else if(serialMsg == "get speed"){
-            Serial.println(getSpeed());
-        }
-        else if(serialMsg == "extend"){
-            serialResult = serialExtend;
-        }
-        else if(serialMsg == "retract"){
-            serialResult = serialRetract;
-        }
-        else if(serialMsg == "stop"){
-            serialResult = serialStop;
-        }
-        else if(serialMsg == "relax"){
-            serialResult = serialRelax;
-        }
-    }
-
-    return serialResult;
-}
-
 void Actuator::cyclic(){
-    bool extFB = !digitalRead(_extPin);
-    bool retFB = !digitalRead(_retPin);
-    serialCmd serialMsg = decodeSerial();
+    unsigned long extendStartTime;
+    unsigned long retractStartTime;
 
-    switch(getState()){
+    checkFB();
+    switch(_state){
         case extended:
-            if(serialMsg == serialStop){
-                setCommand(motorStop);
-                setState(stopped);
-            }
-            else if(serialMsg == serialRelax){
-                setCommand(motorRelax);
-                setState(relaxed);
-            }
-            else if(serialMsg == serialRetract && !retFB){
-                setCommand(motorRetract);
-                setState(retracting);
+            setCommand(motorStop);
+            if(_state != _prevState){
+                _prevState = _state;
             }
             break;
+
         case extending:
-            if(serialMsg == serialStop){
-                setCommand(motorStop);
-                setState(stopped);
+            setCommand(motorExtend);
+            if(_state != _prevState){
+                extendStartTime = millis();
+                _prevState = _state;
             }
-            else if(serialMsg == serialRelax){
-                setCommand(motorRelax);
-                setState(relaxed);
+
+            if(millis()-extendStartTime >= _extendTimeout){
+                _state = extendingTimeout;
             }
-            else if(serialMsg == serialRetract && !retFB){
-                setCommand(motorRetract);
-                setState(retracting);
-            }
-            else if(serialMsg == serialExtend && !extFB){
-                setCommand(motorExtend);
-                setState(extending);
-            }
-            else if(extFB){
-                setCommand(motorStop);
-                setState(extended);
+            else if(_extFB && !_retFB){
+                _state = extended;
             }
             break;
+
+        case extendingTimeout:
+            setCommand(motorStop);
+            if(_state != _prevState){
+                _prevState = _state;
+            }
+            break;
+
         case retracted:
-            if(serialMsg == serialStop){
-                setCommand(motorStop);
-                setState(stopped);
-            }
-            else if(serialMsg == serialRelax){
-                setCommand(motorRelax);
-                setState(relaxed);
-            }
-            else if(serialMsg == serialExtend && !extFB){
-                setCommand(motorExtend);
-                setState(extending);
+            setCommand(motorStop);
+            if(_state != _prevState){
+                _prevState = _state;
             }
             break;
+
         case retracting:
-            if(serialMsg == serialStop){
-                setCommand(motorStop);
-                setState(stopped);
+            setCommand(motorRetract);
+            if(_state != _prevState){
+                retractStartTime = millis();
+                _prevState = _state;
+                Serial.println(retractStartTime);
             }
-            else if(serialMsg == serialRelax){
-                setCommand(motorRelax);
-                setState(relaxed);
+
+            if(millis()-retractStartTime >= _retractTimeout){
+                _state = retractingTimeout;
             }
-            else if(serialMsg == serialExtend && !extFB){
-                setCommand(motorExtend);
-                setState(extending);
-            }
-            else if(serialMsg == serialRetract && !retFB){
-                setCommand(motorRetract);
-                setState(retracting);
-            }
-            else if(retFB){
-                setCommand(motorStop);
-                setState(retracted);
+            else if(!_extFB && _retFB){
+                _state = extended;
             }
             break;
+
+        case retractingTimeout:
+            setCommand(motorStop);
+            if(_state != _prevState){
+                _prevState = _state;
+            }
+            break;
+
         case stopped:
-            if(serialMsg == serialRelax){
-                setCommand(motorRelax);
-                setState(relaxed);
-            }
-            else if(serialMsg == serialRetract && !retFB){
-                setCommand(motorRetract);
-                setState(retracting);
-            }
-            else if(serialMsg == serialExtend && !extFB){
-                setCommand(motorExtend);
-                setState(extending);
+            setCommand(motorStop);
+            if(_state != _prevState){
+                _prevState = _state;
             }
             break;
+
         case relaxed:
-            if(serialMsg == serialStop){
-                setCommand(motorStop);
-                setState(stopped);
-            }
-            else if(serialMsg == serialRetract && !retFB){
-                setCommand(motorRetract);
-                setState(retracting);
-            }
-            else if(serialMsg == serialExtend && !extFB){
-                setCommand(motorExtend);
-                setState(extending);
+            setCommand(motorRelax);
+            if(_state != _prevState){
+                _prevState = _state;
             }
             break;
     }

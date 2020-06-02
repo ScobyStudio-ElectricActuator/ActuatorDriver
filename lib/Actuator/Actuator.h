@@ -11,6 +11,10 @@ v1.0
 -One channel
 -Serial controlled
 
+v2.0
+-Two channel capability
+-Timeout feature
+-Change speed while extending/retracting
 */
 
 #ifndef Actuator_h
@@ -20,32 +24,38 @@ v1.0
 
 class Actuator{
     public:
-        Actuator();
-        void attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
-        void cyclic();
-        
-    private:
         enum state{
             extended,
             extending,
             retracted,
             retracting,
             stopped,
-            relaxed
+            relaxed,
+            extendingTimeout,
+            retractingTimeout,
         };
 
+        Actuator();
+        void attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
+        void cyclic();
+
+        state getState();
+        int getSpeed();
+        void setSpeed(int speed);
+        void setRetractTimeout(float retractTimeout);
+        void setExtendTimeout(float extendTimeout);
+
+        void extend();
+        void retract();
+        void stop();
+        void relax();
+        
+    private:
         enum motorCmd{
             motorExtend,
             motorRetract,
             motorStop,
             motorRelax
-        };
-
-        enum serialCmd{
-            serialExtend,
-            serialRetract,
-            serialStop,
-            serialRelax
         };
 
         int _extPin;
@@ -54,22 +64,19 @@ class Actuator{
         int _output1Pin;
         int _output2Pin;
         int _speed;
-        int _maxSpeed;
         int _minSpeed;
-        int _offSpeed;
+        unsigned int _extendTimeout;
+        unsigned int _retractTimeout;
+
+        bool _extFB;
+        bool _retFB;
 
         state _state;
+        state _prevState;
         motorCmd _command;
 
-        void setState(state actuatorState);
-        state getState();
-        
-        int getSpeed();
-        void setSpeed(int speed);
-
         void setCommand(motorCmd motorCommand);
-
-        serialCmd decodeSerial();
+        void checkFB();
 };
 
 
