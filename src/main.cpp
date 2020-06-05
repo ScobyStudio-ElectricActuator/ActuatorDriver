@@ -10,30 +10,51 @@
 #define ChA_output1Pin 4
 #define ChA_output2Pin 3
 
-Actuator motorA;
+Actuator motorA(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin);
 
 void setup() {
-  motorA.attachPins(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin);
+  Serial.begin(9600);
+  while(!Serial);
+  Serial.println("serial began");
 }
 
 void loop() {
   if(Serial.available()){
     String serialMsg = Serial.readString();
 
-    if(serialMsg == "set speed 100"){
-      motorA.setSpeed(100);
+    if(serialMsg.substring(0,9) == "set speed"){
+      motorA.setSpeed(serialMsg.substring(10).toInt());
     }
     else if(serialMsg == "get speed"){
       Serial.println(motorA.getSpeed());
     }
     else if(serialMsg == "get state"){
-      Serial.println(motorA.getState());
+      switch(motorA.getState()){
+        case Actuator::extended:
+          Serial.println("extended");
+          break;
+        case Actuator::extending:
+          Serial.println("extending");
+          break;
+        case Actuator::retracted:
+          Serial.println("retracted");
+          break;
+        case Actuator::retracting:
+          Serial.println("retracting");
+          break;
+        case Actuator::stopped:
+          Serial.println("stopped");
+          break;
+        case Actuator::relaxed:
+          Serial.println("relaxed");
+          break;
+        case Actuator::timedout:
+          Serial.println("extending timeout");
+          break;
+      }
     }
-    else if(serialMsg == "set extend timeout 1"){
-      motorA.setExtendTimeout(1);
-    }
-    else if(serialMsg == "set retract timeout 1"){
-      motorA.setRetractTimeout(1);
+    else if(serialMsg.substring(0,11) == "set timeout"){
+      motorA.setTimeout(serialMsg.substring(12).toFloat());
     }
     else if(serialMsg == "extend"){
       motorA.extend();

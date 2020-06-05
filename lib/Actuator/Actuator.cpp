@@ -1,22 +1,7 @@
 #include "Actuator.h"
 #include "Arduino.h"
 
-Actuator::Actuator(){
-    _minSpeed = 10;
-
-    setSpeed(100);
-    _state = relaxed;
-    _prevState = relaxed;
-
-    _extendTimeout = 3000;
-    _retractTimeout = 3000;
-}
-
-void Actuator::attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin){
-    Serial.begin(9600);
-    while(!Serial);
-    Serial.println("serial began");
-
+Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin){
     _extPin = extPin;
     _retPin = retPin;
     _enablePin = enablePin;
@@ -29,8 +14,27 @@ void Actuator::attachPins(int extPin, int retPin, int enablePin, int output1Pin,
     pinMode(_output1Pin, OUTPUT);
     pinMode(_output2Pin, OUTPUT);
 
+    _minSpeed = 10;
+
+    setSpeed(100);
+
     checkFB();
-    setCommand(motorRelax);
+    if(_extFB){
+        _state = extended;
+        _prevState = extended;
+    }
+    else if(_retFB){
+        _state = retracted;
+        _prevState = retracted;
+    }
+    else{
+        _state = relaxed;
+        _prevState = relaxed;
+    }
+    
+    cyclic();
+
+    setTimeout(3);
 }
 
 void Actuator::setSpeed(int speed){
@@ -43,19 +47,22 @@ void Actuator::setSpeed(int speed){
 }
 
 int Actuator::getSpeed(){
-    return map(_speed, _minSpeed, 255, 1, 100);
+    if(_speed != 0){
+        return map(_speed, _minSpeed, 255, 1, 100);
+    }
+    else{
+        return 0;
+    }
 }
 
 Actuator::state Actuator::getState(){
     return _state;
 }
 
-void Actuator::setRetractTimeout(float retractTimeout){
-    _retractTimeout = retractTimeout*1000;
-}
-
-void Actuator::setExtendTimeout(float extendTimeout){
-    _extendTimeout = extendTimeout*1000;
+void Actuator::setTimeout(unsigned int timeout){
+    if(timeout >= 0){
+        _timeout = timeout * 1000;
+    }
 }
 
 void Actuator::extend(){
@@ -83,24 +90,27 @@ void Actuator::checkFB(){
     _retFB = !digitalRead(_retPin);
 }
 
-void Actuator::setCommand(motorCmd motorCommand){
-    switch(motorCommand){
-        case motorExtend:
+void Actuator::setCommand(){
+    switch(_state){
+        case extending:
             digitalWrite(_output1Pin,HIGH);
             digitalWrite(_output2Pin,LOW);
             analogWrite(_enablePin,_speed);
             break;
-        case motorRetract:
+        case retracting:
             digitalWrite(_output1Pin,LOW);
             digitalWrite(_output2Pin,HIGH);
             analogWrite(_enablePin,_speed);
             break;
-        case motorStop:
+        case stopped:
+        case extended:
+        case retracted:
+        case timedout:
             digitalWrite(_output1Pin,LOW);
             digitalWrite(_output2Pin,LOW);
             analogWrite(_enablePin,255);
             break;
-        case motorRelax:
+        case relaxed:
             digitalWrite(_output1Pin,LOW);
             digitalWrite(_output2Pin,LOW);
             analogWrite(_enablePin,0);
@@ -109,79 +119,72 @@ void Actuator::setCommand(motorCmd motorCommand){
 }
 
 void Actuator::cyclic(){
-    unsigned long extendStartTime;
-    unsigned long retractStartTime;
+    static unsigned long startTime;
 
     checkFB();
     switch(_state){
         case extended:
-            setCommand(motorStop);
+            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case extending:
-            setCommand(motorExtend);
+            setCommand();
             if(_state != _prevState){
-                extendStartTime = millis();
+                startTime = millis();
                 _prevState = _state;
             }
 
-            if(millis()-extendStartTime >= _extendTimeout){
-                _state = extendingTimeout;
+            if(millis()-startTime >= _timeout && _timeout != 0){
+                _state = timedout;
             }
-            else if(_extFB && !_retFB){
+            
+            if(_extFB && !_retFB){
                 _state = extended;
             }
             break;
 
-        case extendingTimeout:
-            setCommand(motorStop);
-            if(_state != _prevState){
-                _prevState = _state;
-            }
-            break;
-
         case retracted:
-            setCommand(motorStop);
+            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case retracting:
-            setCommand(motorRetract);
+            setCommand();
             if(_state != _prevState){
-                retractStartTime = millis();
+                startTime = millis();
                 _prevState = _state;
-                Serial.println(retractStartTime);
             }
 
-            if(millis()-retractStartTime >= _retractTimeout){
-                _state = retractingTimeout;
+            if(millis()-startTime >= _timeout && _timeout != 0){
+                _state = timedout;
             }
-            else if(!_extFB && _retFB){
-                _state = extended;
+            
+            if(!_extFB && _retFB){
+                _state = retracted;
             }
             break;
 
-        case retractingTimeout:
-            setCommand(motorStop);
+        case timedout:
+            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case stopped:
-            setCommand(motorStop);
+            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case relaxed:
-            setCommand(motorRelax);
+            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }

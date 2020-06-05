@@ -6,15 +6,22 @@
 /*
 Revision history
 
-v1.0
--Initial release
--One channel
--Serial controlled
+v3.0
+-improve set commands
+-removed attachPins method
+-added disable timeout
+-remove motor enums
 
 v2.0
 -Two channel capability
 -Timeout feature
 -Change speed while extending/retracting
+
+
+v1.0
+-Initial release
+-One channel
+-Serial controlled
 */
 
 #ifndef Actuator_h
@@ -31,19 +38,16 @@ class Actuator{
             retracting,
             stopped,
             relaxed,
-            extendingTimeout,
-            retractingTimeout,
+            timedout,
         };
 
-        Actuator();
-        void attachPins(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
+        Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
         void cyclic();
 
         state getState();
         int getSpeed();
         void setSpeed(int speed);
-        void setRetractTimeout(float retractTimeout);
-        void setExtendTimeout(float extendTimeout);
+        void setTimeout(unsigned int timeout);
 
         void extend();
         void retract();
@@ -51,13 +55,6 @@ class Actuator{
         void relax();
         
     private:
-        enum motorCmd{
-            motorExtend,
-            motorRetract,
-            motorStop,
-            motorRelax
-        };
-
         int _extPin;
         int _retPin;
         int _enablePin;
@@ -65,17 +62,15 @@ class Actuator{
         int _output2Pin;
         int _speed;
         int _minSpeed;
-        unsigned int _extendTimeout;
-        unsigned int _retractTimeout;
+        unsigned long _timeout;
 
         bool _extFB;
         bool _retFB;
 
         state _state;
         state _prevState;
-        motorCmd _command;
 
-        void setCommand(motorCmd motorCommand);
+        void setCommand();
         void checkFB();
 };
 
