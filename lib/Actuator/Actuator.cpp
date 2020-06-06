@@ -14,11 +14,14 @@ Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int ou
     pinMode(_output1Pin, OUTPUT);
     pinMode(_output2Pin, OUTPUT);
 
-    _minSpeed = 10;
-
+    setMinSpeed(5);
+    setNormallyOpenFB(true);
+    setHasFeedback(true);
+    setFeedbackTime(3);
     setSpeed(100);
+    setTimeout(3);
 
-    checkFB();
+    readInput();
     if(_extFB){
         _state = extended;
         _prevState = extended;
@@ -33,8 +36,6 @@ Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int ou
     }
     
     cyclic();
-
-    setTimeout(3);
 }
 
 void Actuator::setSpeed(int speed){
@@ -44,6 +45,13 @@ void Actuator::setSpeed(int speed){
     else if(speed == 0){
         _speed = 0;
     }
+}
+
+void Actuator::setMinSpeed(int minSpeed){
+    if(minSpeed >= 0 && minSpeed <100){
+        _minSpeed = map(minSpeed,0,100,0,255);
+    }
+    setSpeed(_speed);
 }
 
 int Actuator::getSpeed(){
@@ -62,6 +70,20 @@ Actuator::state Actuator::getState(){
 void Actuator::setTimeout(unsigned int timeout){
     if(timeout >= 0){
         _timeout = timeout * 1000;
+    }
+}
+
+void Actuator::setNormallyOpenFB(bool isNormallyOpen){
+    _isNO = isNormallyOpen;
+}
+
+void Actuator::setHasFeedback(bool hasFeedback){
+    _hasFB = hasFeedback;
+}
+
+void Actuator::setFeedbackTime(unsigned int FBTime){
+    if(FBTime >= 0){
+        _FBTime = FBTime;
     }
 }
 
@@ -85,12 +107,12 @@ void Actuator::relax(){
     _state = relaxed;
 }
 
-void Actuator::checkFB(){
-    _extFB = !digitalRead(_extPin);
-    _retFB = !digitalRead(_retPin);
+void Actuator::readInput(){
+    _extFB = digitalRead(_extPin) != _isNO;
+    _retFB = digitalRead(_retPin) != _isNO;
 }
 
-void Actuator::setCommand(){
+void Actuator::writeOutput(){
     switch(_state){
         case extending:
             digitalWrite(_output1Pin,HIGH);
@@ -121,73 +143,67 @@ void Actuator::setCommand(){
 void Actuator::cyclic(){
     static unsigned long startTime;
 
-    checkFB();
+    readInput();
     switch(_state){
         case extended:
-            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case extending:
-            setCommand();
             if(_state != _prevState){
                 startTime = millis();
                 _prevState = _state;
             }
 
-            if(millis()-startTime >= _timeout && _timeout != 0){
+            if(millis()-startTime >= _timeout && _timeout != 0 && _hasFB){
                 _state = timedout;
             }
             
-            if(_extFB && !_retFB){
+            if((_extFB && !_retFB && _hasFB) || (millis()-startTime >= _FBTime && !_hasFB)){
                 _state = extended;
             }
             break;
 
         case retracted:
-            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case retracting:
-            setCommand();
             if(_state != _prevState){
                 startTime = millis();
                 _prevState = _state;
             }
 
-            if(millis()-startTime >= _timeout && _timeout != 0){
+            if(millis()-startTime >= _timeout && _timeout != 0 && _hasFB){
                 _state = timedout;
             }
             
-            if(!_extFB && _retFB){
+            if((!_extFB && _retFB && _hasFB) || (millis()-startTime >= _FBTime && !_hasFB)){
                 _state = retracted;
             }
             break;
 
         case timedout:
-            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case stopped:
-            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
 
         case relaxed:
-            setCommand();
             if(_state != _prevState){
                 _prevState = _state;
             }
             break;
     }
+    writeOutput();
 }

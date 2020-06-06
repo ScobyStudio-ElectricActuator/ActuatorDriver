@@ -28,6 +28,9 @@ void loop() {
     else if(serialMsg == "get speed"){
       Serial.println(motorA.getSpeed());
     }
+    else if(serialMsg.substring(0,13) == "set min speed"){
+      motorA.setMinSpeed(serialMsg.substring(14).toInt());
+    }
     else if(serialMsg == "get state"){
       switch(motorA.getState()){
         case Actuator::extended:
@@ -49,12 +52,21 @@ void loop() {
           Serial.println("relaxed");
           break;
         case Actuator::timedout:
-          Serial.println("extending timeout");
+          Serial.println("timed out");
           break;
       }
     }
     else if(serialMsg.substring(0,11) == "set timeout"){
       motorA.setTimeout(serialMsg.substring(12).toFloat());
+    }
+    else if(serialMsg.substring(0,17) == "set normally open"){
+      motorA.setNormallyOpenFB(serialMsg.substring(18).toInt());
+    }
+    else if(serialMsg.substring(0,10) == "set has fb"){
+      motorA.setHasFeedback(serialMsg.substring(11).toInt());
+    }
+    else if(serialMsg.substring(0,11) == "set fb time"){
+      motorA.setFeedbackTime(serialMsg.substring(12).toInt());
     }
     else if(serialMsg == "extend"){
       motorA.extend();

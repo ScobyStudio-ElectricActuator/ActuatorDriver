@@ -6,6 +6,12 @@
 /*
 Revision history
 
+v4.0
+-set min speed
+-NO/NC feedback
+-has feedback
+-feedback time
+
 v3.0
 -improve set commands
 -removed attachPins method
@@ -47,7 +53,11 @@ class Actuator{
         state getState();
         int getSpeed();
         void setSpeed(int speed);
+        void setMinSpeed(int minSpeed);
         void setTimeout(unsigned int timeout);
+        void setNormallyOpenFB(bool isNormallyOpen);
+        void setHasFeedback(bool hasFeedback);
+        void setFeedbackTime(unsigned int FBTime);
 
         void extend();
         void retract();
@@ -60,9 +70,13 @@ class Actuator{
         int _enablePin;
         int _output1Pin;
         int _output2Pin;
+
         int _speed;
         int _minSpeed;
         unsigned long _timeout;
+        bool _isNO;
+        bool _hasFB;
+        unsigned long _FBTime;
 
         bool _extFB;
         bool _retFB;
@@ -70,8 +84,8 @@ class Actuator{
         state _state;
         state _prevState;
 
-        void setCommand();
-        void checkFB();
+        void writeOutput();
+        void readInput();
 };
 
 
