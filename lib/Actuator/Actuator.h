@@ -64,6 +64,8 @@ class Actuator{
         void stop();
         void relax();
         
+        bool testExtFB;
+        bool testRetFB;
     private:
         int _extPin;
         int _retPin;

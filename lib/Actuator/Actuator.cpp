@@ -108,8 +108,8 @@ void Actuator::relax(){
 }
 
 void Actuator::readInput(){
-    _extFB = digitalRead(_extPin) != _isNO;
-    _retFB = digitalRead(_retPin) != _isNO;
+    _extFB = (digitalRead(_extPin) != _isNO) || testExtFB;
+    _retFB = (digitalRead(_retPin) != _isNO) || testRetFB;
 }
 
 void Actuator::writeOutput(){
