@@ -9,8 +9,10 @@
 #define ChA_enablePin 5
 #define ChA_output1Pin 4
 #define ChA_output2Pin 3
+#define ChA_extLED 16
+#define ChA_retLED 17
 
-Actuator motorA(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin);
+Actuator motorA(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin, ChA_extLED, ChA_retLED);
 
 void setup() {
   Serial.begin(9600);

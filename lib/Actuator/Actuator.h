@@ -1,10 +1,12 @@
 ////////////////////////////////////
 //    Project: Actuator Driver    //
 //      Author: Scoby Studio      //
-//         Revision: v1.0         //
+//         Revision: v5.0         //
 ////////////////////////////////////
 /*
 Revision history
+v5.0
+-add ext/ret LED
 
 v4.0
 -set min speed
@@ -47,7 +49,7 @@ class Actuator{
             timedout,
         };
 
-        Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin);
+        Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED);
         void cyclic();
 
         state getState();
@@ -72,6 +74,8 @@ class Actuator{
         int _enablePin;
         int _output1Pin;
         int _output2Pin;
+        int _extLED;
+        int _retLED;
 
         int _speed;
         int _minSpeed;

@@ -1,18 +1,25 @@
 #include "Actuator.h"
 #include "Arduino.h"
 
-Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin){
+Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED){
     _extPin = extPin;
     _retPin = retPin;
     _enablePin = enablePin;
     _output1Pin = output1Pin;
     _output2Pin = output2Pin;
+    _extLED = extLED;
+    _retLED = retLED;
+
+    testExtFB = false;
+    testRetFB = false;
 
     pinMode(_extPin, INPUT_PULLUP);
     pinMode(_retPin, INPUT_PULLUP);
     pinMode(_enablePin, OUTPUT);
     pinMode(_output1Pin, OUTPUT);
     pinMode(_output2Pin, OUTPUT);
+    pinMode(_extLED, OUTPUT);
+    pinMode(_retLED, OUTPUT);
 
     setMinSpeed(5);
     setNormallyOpenFB(true);
@@ -138,6 +145,8 @@ void Actuator::writeOutput(){
             analogWrite(_enablePin,0);
             break;
     }
+    digitalWrite(_extLED, _extFB);
+    digitalWrite(_retLED, _retFB);
 }
 
 void Actuator::cyclic(){
