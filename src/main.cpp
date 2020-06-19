@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <Actuator.h>
+#include <Actuator_IO.h>
 
 //Feedback pins
 #define ChA_extPin 8
@@ -12,7 +12,7 @@
 #define ChA_extLED 16
 #define ChA_retLED 17
 
-Actuator motorA(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin, ChA_extLED, ChA_retLED);
+Actuator_IO motorA(ChA_extPin, ChA_retPin, ChA_enablePin, ChA_output1Pin, ChA_output2Pin, ChA_extLED, ChA_retLED);
 
 void setup() {
   Serial.begin(9600);
@@ -35,25 +35,25 @@ void loop() {
     }
     else if(serialMsg == "get state"){
       switch(motorA.getState()){
-        case Actuator::extended:
+        case Actuator_IO::extended:
           Serial.println("extended");
           break;
-        case Actuator::extending:
+        case Actuator_IO::extending:
           Serial.println("extending");
           break;
-        case Actuator::retracted:
+        case Actuator_IO::retracted:
           Serial.println("retracted");
           break;
-        case Actuator::retracting:
+        case Actuator_IO::retracting:
           Serial.println("retracting");
           break;
-        case Actuator::stopped:
+        case Actuator_IO::stopped:
           Serial.println("stopped");
           break;
-        case Actuator::relaxed:
+        case Actuator_IO::relaxed:
           Serial.println("relaxed");
           break;
-        case Actuator::timedout:
+        case Actuator_IO::timedout:
           Serial.println("timed out");
           break;
       }

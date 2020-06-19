@@ -5,6 +5,9 @@
 ////////////////////////////////////
 /*
 Revision history
+v6.0
+-update class name
+
 v5.0
 -add ext/ret LED
 
@@ -32,12 +35,12 @@ v1.0
 -Serial controlled
 */
 
-#ifndef Actuator_h
-#define Actuator_h
+#ifndef Actuator_IO_h
+#define Actuator_IO_h
 
 #include "Arduino.h"
 
-class Actuator{
+class Actuator_IO{
     public:
         enum state{
             extended,
@@ -49,7 +52,7 @@ class Actuator{
             timedout,
         };
 
-        Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED);
+        Actuator_IO(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED);
         void cyclic();
 
         state getState();

@@ -1,7 +1,7 @@
-#include "Actuator.h"
+#include "Actuator_IO.h"
 #include "Arduino.h"
 
-Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED){
+Actuator_IO::Actuator_IO(int extPin, int retPin, int enablePin, int output1Pin, int output2Pin, int extLED, int retLED){
     _extPin = extPin;
     _retPin = retPin;
     _enablePin = enablePin;
@@ -45,7 +45,7 @@ Actuator::Actuator(int extPin, int retPin, int enablePin, int output1Pin, int ou
     cyclic();
 }
 
-void Actuator::setSpeed(int speed){
+void Actuator_IO::setSpeed(int speed){
     if(speed >=1 && speed <=100){
         _speed = map(speed, 1, 100, _minSpeed, 255);
     }
@@ -54,14 +54,14 @@ void Actuator::setSpeed(int speed){
     }
 }
 
-void Actuator::setMinSpeed(int minSpeed){
+void Actuator_IO::setMinSpeed(int minSpeed){
     if(minSpeed >= 0 && minSpeed <100){
         _minSpeed = map(minSpeed,0,100,0,255);
     }
     setSpeed(_speed);
 }
 
-int Actuator::getSpeed(){
+int Actuator_IO::getSpeed(){
     if(_speed != 0){
         return map(_speed, _minSpeed, 255, 1, 100);
     }
@@ -70,56 +70,56 @@ int Actuator::getSpeed(){
     }
 }
 
-Actuator::state Actuator::getState(){
+Actuator_IO::state Actuator_IO::getState(){
     return _state;
 }
 
-void Actuator::setTimeout(unsigned int timeout){
+void Actuator_IO::setTimeout(unsigned int timeout){
     if(timeout >= 0){
         _timeout = timeout * 1000;
     }
 }
 
-void Actuator::setNormallyOpenFB(bool isNormallyOpen){
+void Actuator_IO::setNormallyOpenFB(bool isNormallyOpen){
     _isNO = isNormallyOpen;
 }
 
-void Actuator::setHasFeedback(bool hasFeedback){
+void Actuator_IO::setHasFeedback(bool hasFeedback){
     _hasFB = hasFeedback;
 }
 
-void Actuator::setFeedbackTime(unsigned int FBTime){
+void Actuator_IO::setFeedbackTime(unsigned int FBTime){
     if(FBTime >= 0){
         _FBTime = FBTime;
     }
 }
 
-void Actuator::extend(){
+void Actuator_IO::extend(){
     if(!_extFB){
         _state = extending;
     }
 }
 
-void Actuator::retract(){
+void Actuator_IO::retract(){
     if(!_retFB){
         _state = retracting;
     }
 }
 
-void Actuator::stop(){
+void Actuator_IO::stop(){
     _state = stopped;
 }
 
-void Actuator::relax(){
+void Actuator_IO::relax(){
     _state = relaxed;
 }
 
-void Actuator::readInput(){
+void Actuator_IO::readInput(){
     _extFB = (digitalRead(_extPin) != _isNO) || testExtFB;
     _retFB = (digitalRead(_retPin) != _isNO) || testRetFB;
 }
 
-void Actuator::writeOutput(){
+void Actuator_IO::writeOutput(){
     switch(_state){
         case extending:
             digitalWrite(_output1Pin,HIGH);
@@ -149,7 +149,7 @@ void Actuator::writeOutput(){
     digitalWrite(_retLED, _retFB);
 }
 
-void Actuator::cyclic(){
+void Actuator_IO::cyclic(){
     static unsigned long startTime;
 
     readInput();
