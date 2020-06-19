@@ -1,5 +1,5 @@
 # Actuator Driver IO
-## Background
+## Intro
 This library uses the L293D H-bridge drivers with an Arduino Nano to drive a TT hobby motor. Extend and retract feedback sensors can be added to stop the motor when it is fully extended or retracted.
 This is useful in robotic applications where an actuator is only required to be in two positions (extended and retracted). A major advantage of this actuator system is there is no limit to the stroke length. The motor will run until the feedback sensors are met (assuming the timeout is set up correctly).
 ## Parts list
