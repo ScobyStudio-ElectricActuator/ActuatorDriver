@@ -1,10 +1,13 @@
 ////////////////////////////////////
 //    Project: Actuator Driver    //
 //      Author: Scoby Studio      //
-//         Revision: v5.0         //
+//         Revision: v6.1         //
 ////////////////////////////////////
 /*
 Revision history
+v6.1
+-Bug fix get fb time
+
 v6.0
 -update class name
 

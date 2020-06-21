@@ -90,7 +90,7 @@ void Actuator_IO::setHasFeedback(bool hasFeedback){
 
 void Actuator_IO::setFeedbackTime(unsigned int FBTime){
     if(FBTime >= 0){
-        _FBTime = FBTime;
+        _FBTime = FBTime * 1000;
     }
 }
 
